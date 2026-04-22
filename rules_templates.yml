@@ -1,0 +1,299 @@
+# Шаблоны уникальных типов правил из rules.yml
+# Каждый шаблон можно копировать и заполнять под свою проверку.
+
+# TEMPLATE 1: text_starts_with
+- id: "-id-правила"               # Уникальный идентификатор правила
+  description: "Кратко: поле должно начинаться с префикса"  # Описание логики правила
+  type: text_starts_with                           # Тип проверки: проверяется с prefix(ниже)
+  target_column: SOME_TEXT_COLUMN                  # Колонка, которую валидируем
+  prefix: "Да"                                     # Обязательный префикс
+  skip_if_empty: false                             # false = пустое значение тоже ошибка
+  error_message: "Текст должен начинаться с Да"    # Текст ошибки при нарушении
+
+# TEMPLATE 2: required_if
+# Задайте ровно одно: target_column (одна колонка) или target_columns (несколько). Оба ключа в одном правиле нельзя.
+# Когда when истинно, каждая перечисленная колонка должна быть заполнена (пустое значение в любой из них — ошибка).
+- id: "id-required-if"
+  description: "Поле обязательно, если условие выполняется"
+  type: required_if                                # Тип: поле(я) обязательны при условии
+  target_column: TARGET_COLUMN                     # Вариант А: одна колонка
+  # target_columns:                                # Вариант Б: несколько колонок (тогда не указывайте target_column)
+  #   - TARGET_COLUMN_A
+  #   - TARGET_COLUMN_B
+  when:                                            # Блок условия, при котором правило активно
+    column: SOURCE_COLUMN                          # Колонка-источник условия
+    operator: starts_with                          # Оператор (starts_with / equals / not_equals и т.д.)
+    value: "Да"                                    # Значение для сравнения (если нужно оператору)
+  error_message: "Поля должны быть заполнены при условии"
+
+# TEMPLATE 3: time_greater_or_equal
+- id: "id-time-greater-or-equal"
+  description: "Время в target >= времени в ref"
+  type: time_greater_or_equal                      # Тип: сравнение времени >=
+  target_column: TARGET_TIME                       # Проверяемое время
+  ref_column: REFERENCE_TIME                       # Время, с которым сравниваем
+  skip_if_empty: false                             # false = пустой target тоже ошибка
+  when:                                            # Доп. условие включения проверки
+    column: REFERENCE_TIME                         # Обычно проверяем, что reference заполнен
+    operator: is_not_empty                         # Оператор без value
+  error_message: "TARGET_TIME должно быть не раньше REFERENCE_TIME"
+
+# TEMPLATE 4: time_between
+- id: "id-time-between"
+  description: "Время в target в диапазоне минут от ref"
+  type: time_between                               # Тип: разница времени в интервале
+  target_column: TARGET_TIME                       # Проверяемое время
+  ref_column: REFERENCE_TIME                       # Базовое время
+  min_minutes: 30                                  # Минимум минут после ref (включительно)
+  max_minutes: 60                                  # Максимум минут после ref (включительно)
+  skip_if_empty: false                             # Можно ставить true, если пустое допустимо
+  error_message: "TARGET_TIME должно быть в интервале 30..60 минут от REFERENCE_TIME"
+
+# TEMPLATE 5: number_between
+- id: "id-number-between"
+  description: "Число должно быть в заданном диапазоне"
+  type: number_between                             # Тип: числовой диапазон
+  target_column: TARGET_NUMBER                     # Поле с числом
+  min_value: 18                                    # Нижняя граница (включительно)
+  max_value: 99                                    # Верхняя граница (включительно)
+  skip_if_empty: false                             # false = пустое значение ошибка
+  error_message: "TARGET_NUMBER должно быть в диапазоне 18..99"
+
+# TEMPLATE 6: value_in
+- id: "id-value-in"
+  description: "Значение должно входить в список разрешенных"
+  type: value_in                                   # Тип: значение из списка
+  target_column: TARGET_ENUM                       # Вариант А: одна колонка
+  # target_columns:                                # Вариант Б: несколько колонок (тогда не указывайте target_column)
+  #   - TARGET_ENUM_1
+  #   - TARGET_ENUM_2
+  allowed_values:                                  # Список допустимых значений
+    - "Да"                                         # Разрешенный вариант 1
+    - "Нет"                                        # Разрешенный вариант 2
+  skip_if_empty: false                             # false = пустое тоже ошибка
+  error_message: "TARGET_ENUM содержит недопустимое значение"
+
+# TEMPLATE 7: not_empty
+- id: "id-not-empty"
+  description: "Поле обязательно к заполнению"
+  type: not_empty                                  # Тип: поле не должно быть пустым
+  target_column: REQUIRED_COLUMN                   # Вариант А: одна обязательная колонка
+  # target_columns:                                # Вариант Б: несколько обязательных колонок (тогда не указывайте target_column)
+  #   - REQUIRED_COLUMN_A
+  #   - REQUIRED_COLUMN_B
+  error_message: "REQUIRED_COLUMN должно быть заполнено"
+
+# TEMPLATE 7a: empty (поле всегда должно быть пустым)
+- id: "id-empty"
+  description: "Поле не должно быть заполнено ни в одной строке"
+  type: empty                                       # Тип: target_column всегда пустой (без блока when)
+  target_column: OPTIONAL_COMMENT                   # Колонка, которая должна оставаться пустой
+  error_message: "OPTIONAL_COMMENT должно быть пустым"
+
+# TEMPLATE 8: number_less_or_equal
+- id: "id-number-less-or-equal"
+  description: "Число должно быть <= порога (или пусто, если разрешено)"
+  type: number_less_or_equal                       # Тип: число <= value
+  target_column: TARGET_NUMBER                     # Проверяемое числовое поле
+  value: 10                                        # Порог (максимально допустимое значение)
+  skip_if_empty: true                              # true = пустое значение пропускаем
+  error_message: "TARGET_NUMBER должно быть пустым или <= 10"
+
+# TEMPLATE 9: empty_if
+- id: "id-empty-if"
+  description: "Поле должно быть пустым, если условие выполняется"
+  type: empty_if                                   # Тип: поле обязано быть пустым при условии
+  target_column: TARGET_COMMENT                    # Поле, которое должно быть пустым
+  when:                                            # Условие, при котором поле обязано быть пустым
+    column: DRIVER_COLUMN                          # Колонка-условие
+    operator: equals                               # Оператор сравнения
+    value: "Норма"                                 # Значение-триггер
+  error_message: "TARGET_COMMENT должно быть пустым при условии"
+
+# TEMPLATE 10: date_between
+- id: "id-date-between"
+  description: "Дата target в диапазоне дней от ref"
+  type: date_between                               # Тип: разница дат в интервале
+  target_column: TARGET_DATE                       # Вариант А: одна проверяемая дата
+  # target_columns:                                # Вариант Б: несколько дат (тогда не указывайте target_column)
+  #   - TARGET_DATE_1
+  #   - TARGET_DATE_2
+  ref_column: REFERENCE_DATE                       # Опорная дата
+  min_days: 0                                      # Минимум дней от ref (включительно)
+  max_days: 14                                     # Максимум дней от ref (включительно)
+  date_format: "%Y-%m-%d"                          # Формат парсинга даты
+  error_message: "TARGET_DATE должна быть в диапазоне 0..14 дней от REFERENCE_DATE"
+
+# TEMPLATE 11: value_in_if
+- id: "id-value-in-if"
+  description: "Значение target из списка allowed_values, если выполняется условие"
+  type: value_in_if                                # Тип: условный enum-контроль
+  target_column: TARGET_INDICATOR                  # Поле, которое ограничиваем списком
+  allowed_values:                                  # Список допустимых значений при условии
+    - "Норма"
+  when:                                            # Условие включения проверки
+    column: SOURCE_NUMBER                          # Числовой источник условия
+    operator: number_between                       # Оператор для диапазона
+    value:                                         # Значение оператора number_between
+      min: 36.0                                    # Нижняя граница условия
+      max: 36.9                                    # Верхняя граница условия
+  skip_if_empty: false                             # false = пустой target не допускается
+  error_message: "TARGET_INDICATOR должно быть Норма при заданном диапазоне"
+
+# TEMPLATE 12: date_equal
+- id: "id-date-equal"
+  description: "Главная дата должна совпадать с одной или несколькими датами"
+  type: date_equal                                 # Тип: равенство дат
+  main_column: MAIN_DATE                           # Основная колонка даты
+  comparative_columns:                             # Список колонок для сравнения
+    - OTHER_DATE_1                                 # 1-я дата, должна быть равна main_column
+    - OTHER_DATE_2                                 # 2-я дата (если нужно)
+  date_format: "%Y-%m-%d"                          # Формат парсинга даты
+  error_message: "MAIN_DATE должна совпадать с comparative_columns"
+
+# TEMPLATE 13: text_starts_with_many
+- id: "id-text-starts-with-many"
+  description: "Несколько полей должны начинаться с одного префикса"
+  type: text_starts_with_many                      # Тип: проверка префикса сразу для списка колонок
+  target_columns:                                  # Список колонок, к которым применяется одинаковая проверка
+    - COLUMN_1                                     # 1-я колонка для проверки
+    - COLUMN_2                                     # 2-я колонка для проверки
+    - COLUMN_3                                     # 3-я колонка для проверки
+  prefix: "Да"                                     # Обязательный префикс для каждого поля из target_columns
+  skip_if_empty: false                             # false = пустое значение в любой колонке считается ошибкой
+  error_message: "Поля должны содержать только значение формата Да*"
+
+# -----------------------------------------------------------------------------
+# Справочник типов (type): что делает каждый тип
+# -----------------------------------------------------------------------------
+# value_in: значение target_column должно входить в allowed_values.
+# value_in_if: как value_in, но только когда выполняется условие when.
+# required_if: target_column или все из target_columns должны быть заполнены, когда when=true.
+# empty: target_column должен быть пустым всегда.
+# empty_if: target_column должен быть пустым, когда when=true.
+# not_empty: target_column должен быть заполнен всегда.
+# text_starts_with: значение target_column должно начинаться с prefix.
+# text_starts_with_many: то же самое, но сразу для списка target_columns.
+# number_greater_than: значение target_column должно быть больше или равно value.
+# number_less_than: значение target_column должно быть строго меньше value.
+# number_less_or_equal: значение target_column должно быть меньше или равно value.
+# number_between: значение target_column должно быть в диапазоне min_value..max_value.
+# date_equal: main_column должна быть равна всем датам из comparative_columns.
+# date_equal_any: main_column должна совпадать хотя бы с одной датой из comparative_columns.
+# date_between: разница (target_column - ref_column) должна быть в диапазоне min_days..max_days.
+# time_between: разница (target_column - ref_column) должна быть в диапазоне min_minutes..max_minutes.
+# time_greater_or_equal: target_column должен быть позже или равен ref_column.
+
+# -----------------------------------------------------------------------------
+# Памятка для новичков: как начать
+# -----------------------------------------------------------------------------
+# 1) Скопируйте ОДИН подходящий шаблон правила выше.
+# 2) Вставьте его в rules.yml в блок rules: с тем же отступом, как у других правил.
+# 3) Заполните обязательные поля: id, type, error_message; для проверяемых колонок — target_column или target_columns (в зависимости от типа правила; для required_if — ровно одно из двух).
+# 4) Если правило условное, заполните блок when (column, operator, value).
+# 5) Проверьте, что названия колонок написаны точно как в Excel (без лишних пробелов).
+# 6) Сохраните файл и запустите валидацию.
+
+# -----------------------------------------------------------------------------
+# Словарь простыми словами
+# -----------------------------------------------------------------------------
+# rule: одно правило проверки данных.
+# type: вид проверки (что именно проверяем).
+# target_column: колонка, которую проверяем.
+# target_columns: список колонок, которые проверяем одинаково.
+# when: условие "когда запускать правило".
+# operator: операция сравнения в условии (equals, starts_with, number_between и т.д.).
+# ref_column: колонка, с которой сравниваем дату/время/число.
+# skip_if_empty: пропускать ли проверку, если поле пустое.
+# error_message: текст, который увидит пользователь при ошибке.
+
+# -----------------------------------------------------------------------------
+# Частые ошибки и как быстро исправить
+# -----------------------------------------------------------------------------
+# Ошибка: "target_columns must be a non-empty list"
+# Причина: для text_starts_with_many список target_columns пустой или не список.
+# Решение: укажите минимум одну колонку в формате списка:
+#   target_columns:
+#     - COLUMN_1
+#
+# Ошибка: правило не срабатывает вообще
+# Причина: неверно заполнен when (например, не тот column или operator).
+# Решение: проверьте блок when и фактические значения в исходной колонке.
+#
+# Ошибка: "недопустимое значение"
+# Причина: значение не входит в allowed_values (или отличается регистром/пробелами).
+# Решение: добавьте нужный вариант в allowed_values или исправьте источник данных.
+#
+# Ошибка: правило "ругается" на пустое поле
+# Причина: skip_if_empty: false (или для not_empty поле обязано быть заполнено).
+# Решение: заполните поле или (если допустимо по логике) поставьте skip_if_empty: true.
+
+# -----------------------------------------------------------------------------
+# Мини-чеклист перед запуском
+# -----------------------------------------------------------------------------
+# [ ] У каждого правила уникальный id.
+# [ ] type выбран из списка поддерживаемых типов выше.
+# [ ] Все колонки существуют в файле данных и названы 1-в-1.
+# [ ] Для value_in / value_in_if заполнен allowed_values.
+# [ ] Для date/time правил указан ref_column и корректные диапазоны.
+# [ ] Текст error_message понятен человеку без тех.подготовки.
+
+# -----------------------------------------------------------------------------
+# Справочник operator для блока when
+# -----------------------------------------------------------------------------
+# equals
+#   Что делает: true, если значение в when.column равно when.value.
+#   Пример: operator: equals, value: "Норма"
+#
+# not_equals
+#   Что делает: true, если значение в when.column НЕ равно when.value.
+#   Пример: operator: not_equals, value: "Норма"
+#
+# starts_with
+#   Что делает: true, если текст в when.column начинается с when.value.
+#   Пример: operator: starts_with, value: "Да"
+#
+# is_not_empty
+#   Что делает: true, если when.column не пустая.
+#   Пример: operator: is_not_empty
+#   Важно: для этого operator обычно не нужен value.
+#
+# number_between
+#   Что делает: true, если число в when.column в диапазоне min..max.
+#   Пример:
+#     operator: number_between
+#     value:
+#       min: 36.0
+#       max: 36.9
+#
+# greater_than
+#   Что делает: true, если число в when.column больше when.value.
+#   Пример: operator: greater_than, value: 10
+#
+# less_than
+#   Что делает: true, если число в when.column меньше when.value.
+#   Пример: operator: less_than, value: 9
+#
+# less_or_equal
+#   Что делает: true, если число в when.column меньше или равно when.value.
+#   Пример: operator: less_or_equal, value: 10
+#
+# equals_column
+#   Что делает: true, если значение в when.column равно значению в колонке, указанной в when.value.
+#   Пример:
+#     column: SCR_ICF_DSSTDAT_ICFPAT
+#     operator: equals_column
+#     value: SCR_ICF_DSSTDAT_ICFINV
+#
+# not_equals_column
+#   Что делает: true, если значение в when.column НЕ равно значению в колонке, указанной в when.value.
+#   Пример:
+#     column: COL_A
+#     operator: not_equals_column
+#     value: COL_B
+#
+# Как выбрать value для operator:
+# - equals / not_equals / starts_with / greater_than / less_than / less_or_equal -> value: одно значение
+# - number_between -> value: объект с min и max
+# - equals_column / not_equals_column -> value: имя второй колонки
+# - is_not_empty -> value обычно не указывается

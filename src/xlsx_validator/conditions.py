@@ -44,6 +44,11 @@ class ConditionEvaluator:
         if operator == "starts_with":
             if is_empty(actual) or expected is None:
                 return False
+            if isinstance(expected, list):
+                prefixes = [str(prefix) for prefix in expected if prefix is not None]
+                if not prefixes:
+                    return False
+                return any(str(actual).startswith(prefix) for prefix in prefixes)
             return str(actual).startswith(str(expected))
         if operator == "greater_than":
             actual_num = _to_float(actual)

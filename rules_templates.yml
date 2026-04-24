@@ -49,6 +49,20 @@
   skip_if_empty: false                             # Можно ставить true, если пустое допустимо
   error_message: "TARGET_TIME должно быть в интервале 30..60 минут от REFERENCE_TIME"
 
+# TEMPLATE 4a: time_after_ref_if_date_equal_many
+- id: "id-time-after-ref-if-date-equal-many"
+  description: "Если дата пары равна ref_date_column, то time_column должно быть строго позже ref_time_column"
+  type: time_after_ref_if_date_equal_many
+  ref_date_column: SCR_ICF_DSSTDAT_ICFINV
+  ref_time_column: SCR_ICF_DSSTTIM_ICFINV
+  pairs:
+    - date_column: SCR_PE_DAT
+      time_column: SCR_PE_TIM
+    - date_column: SCR_VS_DAT
+      time_column: SCR_VS_TIM
+  skip_if_empty: true
+  error_message: "При совпадении даты время должно быть больше опорного времени"
+
 # TEMPLATE 5: number_between
 - id: "id-number-between"
   description: "Число должно быть в заданном диапазоне"
@@ -183,6 +197,7 @@
 # date_between: разница (target_column - ref_column) должна быть в диапазоне min_days..max_days.
 # time_between: разница (target_column - ref_column) должна быть в диапазоне min_minutes..max_minutes.
 # time_greater_or_equal: target_column должен быть позже или равен ref_column.
+# time_after_ref_if_date_equal_many: для каждой пары (date_column, time_column) проверяет, что при date_column == ref_date_column время строго позже ref_time_column.
 
 # -----------------------------------------------------------------------------
 # Памятка для новичков: как начать

@@ -16,6 +16,7 @@ from .rules import (
     RequiredIfRule,
     Rule,
     TimeBetweenRule,
+    TimeAfterRefIfDateEqualManyRule,
     TimeGreaterOrEqualRule,
     UniqueIfRule,
     ValueInIfRule,
@@ -43,6 +44,7 @@ class RuleFactory:
         DateEqualAnyRule.rule_type: DateEqualAnyRule,
         DateBetweenRule.rule_type: DateBetweenRule,
         TimeBetweenRule.rule_type: TimeBetweenRule,
+        TimeAfterRefIfDateEqualManyRule.rule_type: TimeAfterRefIfDateEqualManyRule,
         TimeGreaterOrEqualRule.rule_type: TimeGreaterOrEqualRule,
         UniqueIfRule.rule_type: UniqueIfRule,
     }

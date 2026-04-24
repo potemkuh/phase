@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
 
@@ -641,6 +641,90 @@ class TimeGreaterOrEqualRule(Rule):
         if target is None or ref is None:
             return True
         return target < ref
+
+
+class TimeAfterRefIfDateEqualManyRule(Rule):
+    rule_type = "time_after_ref_if_date_equal_many"
+    required_fields = ["pairs", "ref_date_column", "ref_time_column"]
+
+    def __init__(self, payload: Dict[str, Any], defaults: Dict[str, Any]) -> None:
+        super().__init__(payload, defaults)
+        pairs = self.payload.get("pairs")
+        if not isinstance(pairs, list) or not pairs:
+            raise ValueError(f"{self.rule_id}: pairs must be a non-empty list")
+        parsed_pairs: List[Tuple[str, str]] = []
+        for idx, pair in enumerate(pairs):
+            if not isinstance(pair, dict):
+                raise ValueError(f"{self.rule_id}: pairs[{idx}] must be an object")
+            date_column = pair.get("date_column")
+            time_column = pair.get("time_column")
+            if not isinstance(date_column, str) or not date_column.strip():
+                raise ValueError(f"{self.rule_id}: pairs[{idx}].date_column must be a non-empty string")
+            if not isinstance(time_column, str) or not time_column.strip():
+                raise ValueError(f"{self.rule_id}: pairs[{idx}].time_column must be a non-empty string")
+            parsed_pairs.append((date_column, time_column))
+        self._pairs = parsed_pairs
+
+    def involved_columns(self) -> List[str]:
+        columns: List[str] = [self.payload["ref_date_column"], self.payload["ref_time_column"]]
+        for date_column, time_column in self._pairs:
+            if date_column not in columns:
+                columns.append(date_column)
+            if time_column not in columns:
+                columns.append(time_column)
+        return columns
+
+    def _failed_columns(self, row: pd.Series) -> List[str]:
+        ref_date_column = self.payload["ref_date_column"]
+        ref_time_column = self.payload["ref_time_column"]
+        ref_date = parse_date_value(row.get(ref_date_column), self.get_date_format())
+        ref_time = parse_time_value(row.get(ref_time_column), self.get_time_format())
+        if ref_date is None or ref_time is None:
+            return [] if self.skip_if_empty else [ref_date_column, ref_time_column]
+
+        failed: List[str] = []
+        for date_column, time_column in self._pairs:
+            pair_date = parse_date_value(row.get(date_column), self.get_date_format())
+            if pair_date != ref_date:
+                continue
+            pair_time = parse_time_value(row.get(time_column), self.get_time_format())
+            if pair_time is None:
+                if not self.skip_if_empty:
+                    failed.append(time_column)
+                continue
+            if pair_time <= ref_time:
+                failed.append(time_column)
+        return failed
+
+    def is_failed(self, row: pd.Series) -> bool:
+        return bool(self._failed_columns(row))
+
+    def validate(self, row: pd.Series) -> Optional[ValidationErrorRow]:
+        if not self.should_run(row):
+            return None
+        failed = self._failed_columns(row)
+        if not failed:
+            return None
+        columns = list(failed)
+        ref_date_column = self.payload["ref_date_column"]
+        ref_time_column = self.payload["ref_time_column"]
+        if ref_date_column not in columns:
+            columns.append(ref_date_column)
+        if ref_time_column not in columns:
+            columns.append(ref_time_column)
+        screening_number, randomization_number, initials = _extract_row_identifiers(row)
+        return ValidationErrorRow(
+            row_number=int(row.name) + 2,
+            screening_number=screening_number,
+            randomization_number=randomization_number,
+            initials=initials,
+            rule_id=self.rule_id,
+            severity=self.severity,
+            error_message=self.error_message,
+            description=self.description,
+            columns=columns,
+            values=collect_columns_values(row, columns),
+        )
 
 
 class UniqueIfRule(Rule):

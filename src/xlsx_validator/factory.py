@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Type
 
 from .rules import (
+    AnyNotEmptyRule,
     DateBetweenRule,
     DateEqualAnyRule,
     DateEqualRule,
@@ -34,6 +35,7 @@ class RuleFactory:
         EmptyRule.rule_type: EmptyRule,
         EmptyIfRule.rule_type: EmptyIfRule,
         NotEmptyRule.rule_type: NotEmptyRule,
+        AnyNotEmptyRule.rule_type: AnyNotEmptyRule,
         TextStartsWithRule.rule_type: TextStartsWithRule,
         TextStartsWithManyRule.rule_type: TextStartsWithManyRule,
         NumberGreaterThanRule.rule_type: NumberGreaterThanRule,

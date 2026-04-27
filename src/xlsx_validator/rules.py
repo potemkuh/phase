@@ -9,6 +9,7 @@ from .utils import (
     collect_columns_values,
     is_empty,
     normalize_scalar,
+    parse_numeric_bounds,
     parse_date_value,
     parse_time_value,
 )
@@ -329,6 +330,24 @@ class NotEmptyRule(Rule):
         )
 
 
+class AnyNotEmptyRule(Rule):
+    rule_type = "any_not_empty"
+    required_fields = ["target_columns"]
+
+    def __init__(self, payload: Dict[str, Any], defaults: Dict[str, Any]) -> None:
+        super().__init__(payload, defaults)
+        target_columns = self.payload.get("target_columns")
+        if not isinstance(target_columns, list) or len(target_columns) < 2:
+            raise ValueError(f"{self.rule_id}: target_columns must be a list with at least 2 columns")
+        self._target_columns: List[str] = target_columns
+
+    def involved_columns(self) -> List[str]:
+        return list(self._target_columns)
+
+    def is_failed(self, row: pd.Series) -> bool:
+        return all(is_empty(row.get(column)) for column in self._target_columns)
+
+
 class TextStartsWithRule(Rule):
     rule_type = "text_starts_with"
     required_fields = ["target_column", "prefix"]
@@ -420,10 +439,10 @@ class NumberGreaterThanRule(Rule):
         raw_value = row.get(self.payload["target_column"])
         if is_empty(raw_value):
             return not self.skip_if_empty
-        numeric_value = _to_float(raw_value)
-        if numeric_value is None:
+        _, numeric_max = parse_numeric_bounds(raw_value)
+        if numeric_max is None:
             return True
-        return numeric_value < self.threshold
+        return numeric_max < self.threshold
 
 
 class NumberLessThanRule(Rule):
@@ -441,10 +460,10 @@ class NumberLessThanRule(Rule):
         raw_value = row.get(self.payload["target_column"])
         if is_empty(raw_value):
             return not self.skip_if_empty
-        numeric_value = _to_float(raw_value)
-        if numeric_value is None:
+        numeric_min, _ = parse_numeric_bounds(raw_value)
+        if numeric_min is None:
             return True
-        return numeric_value >= self.threshold
+        return numeric_min >= self.threshold
 
 
 class NumberLessOrEqualRule(Rule):
@@ -462,10 +481,10 @@ class NumberLessOrEqualRule(Rule):
         raw_value = row.get(self.payload["target_column"])
         if is_empty(raw_value):
             return not self.skip_if_empty
-        numeric_value = _to_float(raw_value)
-        if numeric_value is None:
+        numeric_min, _ = parse_numeric_bounds(raw_value)
+        if numeric_min is None:
             return True
-        return numeric_value > self.threshold
+        return numeric_min > self.threshold
 
 
 class NumberBetweenRule(Rule):
@@ -486,10 +505,10 @@ class NumberBetweenRule(Rule):
         raw_value = row.get(self.payload["target_column"])
         if is_empty(raw_value):
             return not self.skip_if_empty
-        numeric_value = _to_float(raw_value)
-        if numeric_value is None:
+        value_min, value_max = parse_numeric_bounds(raw_value)
+        if value_min is None or value_max is None:
             return True
-        return not (self.min_value <= numeric_value <= self.max_value)
+        return value_max < self.min_value or value_min > self.max_value
 
 
 class DateEqualRule(Rule):

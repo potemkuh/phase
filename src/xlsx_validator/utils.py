@@ -1,5 +1,6 @@
 from datetime import date, datetime, time
-from typing import Any, Dict, Iterable, Optional
+import re
+from typing import Any, Dict, Iterable, Optional, Tuple
 
 import pandas as pd
 
@@ -19,6 +20,39 @@ def normalize_scalar(value: Any) -> Any:
     if isinstance(value, str):
         return value.strip()
     return value
+
+
+def parse_numeric_bounds(value: Any) -> Tuple[Optional[float], Optional[float]]:
+    normalized = normalize_scalar(value)
+    if is_empty(normalized):
+        return None, None
+
+    if isinstance(normalized, (int, float)):
+        number = float(normalized)
+        return number, number
+
+    if isinstance(normalized, str):
+        text = normalized.replace(",", ".").strip()
+        # Accept ranges like "2-3", "2 - 3", "5-2" (order can be reversed).
+        range_match = re.match(
+            r"^\s*([+-]?\d+(?:\.\d+)?)\s*[-–—]\s*([+-]?\d+(?:\.\d+)?)\s*$",
+            text,
+        )
+        if range_match:
+            left = float(range_match.group(1))
+            right = float(range_match.group(2))
+            return (left, right) if left <= right else (right, left)
+        try:
+            number = float(text)
+            return number, number
+        except ValueError:
+            return None, None
+
+    try:
+        number = float(normalized)
+        return number, number
+    except (TypeError, ValueError):
+        return None, None
 
 
 def parse_date_value(value: Any, date_format: Optional[str]) -> Optional[date]:

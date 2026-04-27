@@ -3,12 +3,12 @@
 
 # TEMPLATE 1: text_starts_with
 - id: "-id-правила"               # Уникальный идентификатор правила
-  description: "Кратко: поле должно начинаться с префикса"  # Описание логики правила
+  description: "Кратко: поле должно начинаться с префикса (буквы, цифры или их комбинация)"  # Описание логики правила
   type: text_starts_with                           # Тип проверки: проверяется с prefix(ниже)
   target_column: SOME_TEXT_COLUMN                  # Колонка, которую валидируем
-  prefix: "Да"                                     # Обязательный префикс
+  prefix: "Да"                                     # Обязательный префикс (например "12", "AB", "12AB")
   skip_if_empty: false                             # false = пустое значение тоже ошибка
-  error_message: "Текст должен начинаться с Да"    # Текст ошибки при нарушении
+  error_message: "Значение должно начинаться с Да" # Текст ошибки при нарушении
 
 # TEMPLATE 2: required_if
 # Задайте ровно одно: target_column (одна колонка) или target_columns (несколько). Оба ключа в одном правиле нельзя.
@@ -67,11 +67,21 @@
 - id: "id-number-between"
   description: "Число должно быть в заданном диапазоне"
   type: number_between                             # Тип: числовой диапазон
-  target_column: TARGET_NUMBER                     # Поле с числом
+  target_column: TARGET_NUMBER                     # Поле с числом (поддерживает форматы "2-3" и "5-2")
   min_value: 18                                    # Нижняя граница (включительно)
   max_value: 99                                    # Верхняя граница (включительно)
   skip_if_empty: false                             # false = пустое значение ошибка
   error_message: "TARGET_NUMBER должно быть в диапазоне 18..99"
+
+# TEMPLATE 5a: number_between для диапазонов в ячейке
+- id: "id-number-between-range-cell"
+  description: "Диапазон в ячейке (например 2-3 или 5-2) должен пересекаться с допустимым интервалом"
+  type: number_between
+  target_column: SCR_URINE_LBORRES_URWBC
+  min_value: 0
+  max_value: 5
+  skip_if_empty: true
+  error_message: "SCR_URINE_LBORRES_URWBC должно быть в диапазоне 0..5"
 
 # TEMPLATE 6: value_in
 - id: "id-value-in"
@@ -96,6 +106,15 @@
   #   - REQUIRED_COLUMN_A
   #   - REQUIRED_COLUMN_B
   error_message: "REQUIRED_COLUMN должно быть заполнено"
+
+# TEMPLATE 7b: any_not_empty (хотя бы одно поле заполнено)
+- id: "id-any-not-empty"
+  description: "Хотя бы одно поле из списка должно быть заполнено"
+  type: any_not_empty
+  target_columns:
+    - FIELD_A
+    - FIELD_B
+  error_message: "Хотя бы одно из полей FIELD_A или FIELD_B должно быть заполнено"
 
 # TEMPLATE 7a: empty (поле всегда должно быть пустым)
 - id: "id-empty"
@@ -154,6 +173,59 @@
   skip_if_empty: false                             # false = пустой target не допускается
   error_message: "TARGET_INDICATOR должно быть Норма при заданном диапазоне"
 
+# TEMPLATE 11a: value_in_if с составным when (пол + возраст + site#)
+- id: "id-value-in-if-sex-age-site"
+  description: "Правило включается только при совпадении пола, возраста и центра"
+  type: value_in_if
+  target_column: TARGET_INDICATOR
+  allowed_values:
+    - "Норма"
+  when:
+    all:                                            # AND: все условия ниже должны выполниться
+      - column: SCR_DEMO_SEX
+        operator: equals
+        value: "Женский"
+      - column: AGE
+        operator: number_between
+        value:
+          min: 18
+          max: 45
+      - column: site#
+        operator: in
+        value:
+          - 101
+          - 205
+          - 330
+  skip_if_empty: false
+  error_message: "TARGET_INDICATOR имеет недопустимое значение для заданного пола/возраста/центра"
+
+# TEMPLATE 11b: required_if с when.any (OR)
+- id: "id-required-if-any"
+  description: "Поле обязательно, если выполнено хотя бы одно условие"
+  type: required_if
+  target_column: TARGET_REQUIRED
+  when:
+    any:
+      - column: SCR_DEMO_SEX
+        operator: equals
+        value: "Женский"
+      - column: site#
+        operator: in
+        value: [101, 205]
+  error_message: "TARGET_REQUIRED обязательно при выполнении любого условия"
+
+# TEMPLATE 11c: empty_if с when.not (NOT)
+- id: "id-empty-if-not"
+  description: "Поле должно быть пустым, если НЕ выполнено вложенное условие"
+  type: empty_if
+  target_column: OPTIONAL_COMMENT
+  when:
+    not:
+      column: SCR_DEMO_SEX
+      operator: equals
+      value: "Женский"
+  error_message: "OPTIONAL_COMMENT должно быть пустым, если пол не Женский"
+
 # TEMPLATE 12: date_equal
 - id: "id-date-equal"
   description: "Главная дата должна совпадать с одной или несколькими датами"
@@ -182,16 +254,19 @@
 # -----------------------------------------------------------------------------
 # value_in: значение target_column должно входить в allowed_values.
 # value_in_if: как value_in, но только когда выполняется условие when.
+# value_in_many: как value_in, но сразу для списка target_columns.
 # required_if: target_column или все из target_columns должны быть заполнены, когда when=true.
 # empty: target_column должен быть пустым всегда.
 # empty_if: target_column должен быть пустым, когда when=true.
 # not_empty: target_column должен быть заполнен всегда.
+# any_not_empty: хотя бы одно поле из target_columns должно быть заполнено.
 # text_starts_with: значение target_column должно начинаться с prefix.
 # text_starts_with_many: то же самое, но сразу для списка target_columns.
 # number_greater_than: значение target_column должно быть больше или равно value.
 # number_less_than: значение target_column должно быть строго меньше value.
 # number_less_or_equal: значение target_column должно быть меньше или равно value.
 # number_between: значение target_column должно быть в диапазоне min_value..max_value.
+# Для number_between поддерживаются значения вида "2-3", "2 - 3" и "5-2" (обратный порядок тоже корректно разбирается).
 # date_equal: main_column должна быть равна всем датам из comparative_columns.
 # date_equal_any: main_column должна совпадать хотя бы с одной датой из comparative_columns.
 # date_between: разница (target_column - ref_column) должна быть в диапазоне min_days..max_days.
@@ -217,6 +292,9 @@
 # target_column: колонка, которую проверяем.
 # target_columns: список колонок, которые проверяем одинаково.
 # when: условие "когда запускать правило".
+# when может быть:
+# - простым (column + operator + value),
+# - составным через all (AND), any (OR), not (NOT).
 # operator: операция сравнения в условии (equals, starts_with, number_between и т.д.).
 # ref_column: колонка, с которой сравниваем дату/время/число.
 # skip_if_empty: пропускать ли проверку, если поле пустое.
@@ -265,7 +343,8 @@
 #   Пример: operator: not_equals, value: "Норма"
 #
 # starts_with
-#   Что делает: true, если текст в when.column начинается с when.value.
+#   Что делает: true, если значение в when.column начинается с when.value.
+#   Работает с буквами, цифрами и смешанными префиксами (например "12", "AB", "12AB").
 #   Пример: operator: starts_with, value: "Да"
 #
 # is_not_empty
@@ -273,8 +352,13 @@
 #   Пример: operator: is_not_empty
 #   Важно: для этого operator обычно не нужен value.
 #
+# is_empty
+#   Что делает: true, если when.column пустая.
+#   Пример: operator: is_empty
+#
 # number_between
 #   Что делает: true, если число в when.column в диапазоне min..max.
+#   Если в ячейке диапазон (например "2-3"), проверяется пересечение диапазонов.
 #   Пример:
 #     operator: number_between
 #     value:
@@ -285,6 +369,10 @@
 #   Что делает: true, если число в when.column больше when.value.
 #   Пример: operator: greater_than, value: 10
 #
+# greater_or_equal
+#   Что делает: true, если число в when.column больше или равно when.value.
+#   Пример: operator: greater_or_equal, value: 10
+#
 # less_than
 #   Что делает: true, если число в when.column меньше when.value.
 #   Пример: operator: less_than, value: 9
@@ -292,6 +380,27 @@
 # less_or_equal
 #   Что делает: true, если число в when.column меньше или равно when.value.
 #   Пример: operator: less_or_equal, value: 10
+#
+# in
+#   Что делает: true, если значение в when.column входит в список when.value.
+#   Пример:
+#     operator: in
+#     value: [101, 205, 330]
+#
+# not_in
+#   Что делает: true, если значение в when.column НЕ входит в список when.value.
+#   Пример:
+#     operator: not_in
+#     value: [101, 205, 330]
+#
+# number_not_between
+#   Что делает: true, если число в when.column вне диапазона min..max.
+#   Если в ячейке диапазон (например "5-2"), используется нормализованный интервал.
+#   Пример:
+#     operator: number_not_between
+#     value:
+#       min: 36.0
+#       max: 36.9
 #
 # equals_column
 #   Что делает: true, если значение в when.column равно значению в колонке, указанной в when.value.
@@ -309,6 +418,7 @@
 #
 # Как выбрать value для operator:
 # - equals / not_equals / starts_with / greater_than / less_than / less_or_equal -> value: одно значение
-# - number_between -> value: объект с min и max
+# - number_between / number_not_between -> value: объект с min и max
+# - in / not_in -> value: список значений
 # - equals_column / not_equals_column -> value: имя второй колонки
-# - is_not_empty -> value обычно не указывается
+# - is_not_empty / is_empty -> value обычно не указывается

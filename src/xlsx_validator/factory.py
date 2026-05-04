@@ -21,6 +21,7 @@ from .rules import (
     TimeGreaterOrEqualRule,
     UniqueIfRule,
     ValueInIfRule,
+    ValueInIfOrderedRule,
     ValueInManyRule,
     ValueInRule,
 )
@@ -30,6 +31,7 @@ class RuleFactory:
     _registry: Dict[str, Type[Rule]] = {
         ValueInRule.rule_type: ValueInRule,
         ValueInIfRule.rule_type: ValueInIfRule,
+        ValueInIfOrderedRule.rule_type: ValueInIfOrderedRule,
         ValueInManyRule.rule_type: ValueInManyRule,
         RequiredIfRule.rule_type: RequiredIfRule,
         EmptyRule.rule_type: EmptyRule,

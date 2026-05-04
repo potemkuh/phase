@@ -173,6 +173,32 @@
   skip_if_empty: false                             # false = пустой target не допускается
   error_message: "TARGET_INDICATOR должно быть Норма при заданном диапазоне"
 
+# TEMPLATE 11d: value_in_if_ordered (несколько веток по одному source_column)
+- id: "id-value-in-if-ordered"
+  description: "Оценка target зависит от числа/диапазона в source; ветки проверяются по порядку"
+  type: value_in_if_ordered
+  target_column: SCR_URINE_LBNRIND_URRBC
+  source_column: SCR_URINE_LBORRES_URRBC
+  skip_if_empty: false
+  error_message: "Несоответствие количества и оценки"
+  cases:
+    - when:
+        operator: number_between_strict
+        value:
+          min: 0
+          max: 5
+      allowed_values:
+        - "Норма"
+      error_message: "Должно быть Норма при 0..5"
+    - when:
+        operator: number_between
+        value:
+          min: 5.1
+          max: 999
+      allowed_values:
+        - "Отклонение – выше нормы*"
+      error_message: "Должно быть отклонение при выходе за норму"
+
 # TEMPLATE 11a: value_in_if с составным when (пол + возраст + site#)
 - id: "id-value-in-if-sex-age-site"
   description: "Правило включается только при совпадении пола, возраста и центра"
@@ -254,6 +280,7 @@
 # -----------------------------------------------------------------------------
 # value_in: значение target_column должно входить в allowed_values.
 # value_in_if: как value_in, но только когда выполняется условие when.
+# value_in_if_ordered: несколько веток value_in_if для одной пары target_column + source_column (cases по порядку).
 # value_in_many: как value_in, но сразу для списка target_columns.
 # required_if: target_column или все из target_columns должны быть заполнены, когда when=true.
 # empty: target_column должен быть пустым всегда.

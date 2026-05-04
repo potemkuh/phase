@@ -152,6 +152,82 @@ class ValueInIfRule(ValueInRule):
     required_fields = ["allowed_values", "when"]
 
 
+class ValueInIfOrderedRule(Rule):
+    """Several value_in_if branches sharing one target and one source column; first matching when wins."""
+
+    rule_type = "value_in_if_ordered"
+    required_fields = ["target_column", "source_column", "cases"]
+
+    def __init__(self, payload: Dict[str, Any], defaults: Dict[str, Any]) -> None:
+        super().__init__(payload, defaults)
+        self._target_column = str(payload["target_column"])
+        self._source_column = str(payload["source_column"])
+        cases = payload.get("cases")
+        if not isinstance(cases, list) or not cases:
+            raise ValueError(f"{self.rule_id}: cases must be a non-empty list")
+        for idx, case in enumerate(cases):
+            if not isinstance(case, dict):
+                raise ValueError(f"{self.rule_id}: cases[{idx}] must be an object")
+            when_part = case.get("when")
+            if not isinstance(when_part, dict):
+                raise ValueError(f"{self.rule_id}: cases[{idx}].when must be an object")
+            if "column" in when_part:
+                raise ValueError(f"{self.rule_id}: cases[{idx}].when must not include column (use source_column)")
+            if "allowed_values" not in case:
+                raise ValueError(f"{self.rule_id}: cases[{idx}] is missing allowed_values")
+            allowed = case.get("allowed_values")
+            if not isinstance(allowed, list) or not allowed:
+                raise ValueError(f"{self.rule_id}: cases[{idx}].allowed_values must be a non-empty list")
+        self._cases: List[Dict[str, Any]] = cases
+
+    def involved_columns(self) -> List[str]:
+        return [self._target_column, self._source_column]
+
+    def is_failed(self, row: pd.Series) -> bool:
+        return self._validate_row(row) is not None
+
+    def _first_matching_case(self, row: pd.Series) -> Optional[Dict[str, Any]]:
+        for case in self._cases:
+            when_part = case["when"]
+            full_when = {**when_part, "column": self._source_column}
+            if self.condition_evaluator.evaluate(row, full_when):
+                return case
+        return None
+
+    def _validate_row(self, row: pd.Series) -> Optional[ValidationErrorRow]:
+        case = self._first_matching_case(row)
+        if case is None:
+            return None
+        value = normalize_scalar(row.get(self._target_column))
+        allowed = case.get("allowed_values", [])
+        if is_empty(value):
+            if self.skip_if_empty:
+                return None
+        elif value in allowed:
+            return None
+
+        err_msg = case.get("error_message") or self.error_message
+        columns = [self._target_column, self._source_column]
+        screening_number, randomization_number, initials = _extract_row_identifiers(row)
+        return ValidationErrorRow(
+            row_number=int(row.name) + 2,
+            screening_number=screening_number,
+            randomization_number=randomization_number,
+            initials=initials,
+            rule_id=self.rule_id,
+            severity=self.severity,
+            error_message=err_msg,
+            description=self.description,
+            columns=columns,
+            values=collect_columns_values(row, columns),
+        )
+
+    def validate(self, row: pd.Series) -> Optional[ValidationErrorRow]:
+        if not self.should_run(row):
+            return None
+        return self._validate_row(row)
+
+
 class ValueInManyRule(Rule):
     rule_type = "value_in_many"
     required_fields = ["target_columns", "allowed_values"]

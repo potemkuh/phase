@@ -127,6 +127,7 @@ rules:
 
 - `value_in`
 - `value_in_if`
+- `value_in_if_ordered`
 - `value_in_many`
 - `required_if`
 - `empty`
@@ -146,6 +147,30 @@ rules:
 - `time_greater_or_equal`
 - `time_after_ref_if_date_equal_many`
 - `unique_if`
+
+## Пример `value_in_if_ordered`
+
+Несколько веток `value_in_if` для одной пары колонок: `source_column` задаёт числовое поле (в т.ч. диапазоны в ячейке), `target_column` — оценку. Обход идёт **сверху вниз по `cases`**: срабатывает **первая** подошедшая ветка по `when` (без поля `column` внутри `when` — колонка берётся из `source_column`). У каждой ветки свой `allowed_values` и свой `error_message` (если не указан — используется общий у правила).
+
+```yaml
+- id: urine_rbc_assessment
+  type: value_in_if_ordered
+  target_column: SCR_URINE_LBNRIND_URRBC
+  source_column: SCR_URINE_LBORRES_URRBC
+  skip_if_empty: false
+  error_message: "Несоответствие количества и оценки"
+  cases:
+    - when:
+        operator: number_between_strict
+        value: { min: 0, max: 5 }
+      allowed_values: ["Норма"]
+      error_message: "Должно быть Норма при 0..5"
+    - when:
+        operator: number_between
+        value: { min: 5.1, max: 999 }
+      allowed_values: ["Отклонение – выше нормы*"]
+      error_message: "Должно быть отклонение при выходе за норму"
+```
 
 ## Пример `value_in_many`
 

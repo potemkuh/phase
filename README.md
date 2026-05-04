@@ -206,6 +206,8 @@ rules:
 - правил `number_between`, `number_greater_than`, `number_less_than`, `number_less_or_equal`;
 - условий `when` с операторами `number_between`, `number_not_between`, `greater_than`, `greater_or_equal`, `less_than`, `less_or_equal`.
 
+Для пары правил «норма / выше нормы» по одной числовой колонке с диапазоном в ячейке (например `2-6`) оператор `number_between` в `when` использует **пересечение** интервалов. Из-за этого одно значение может одновременно попасть в оба условия. Для правила «должна быть Норма при нормальном диапазоне» в `when` лучше использовать **`number_between_strict`**: тогда весь интервал ячейки должен целиком лежать в `min..max` (для `2-6` и границ нормы `0..5` условие «норма» не выполнится, сработает только ветка «выше нормы» при пересечении с `5.1..999`).
+
 Пример:
 
 ```yaml
@@ -216,6 +218,17 @@ rules:
   max_value: 5
   skip_if_empty: true
   error_message: "SCR_URINE_LBORRES_URWBC должно быть в диапазоне 0..5"
+```
+
+Пример `when` со строгим диапазоном:
+
+```yaml
+when:
+  column: SCR_URINE_LBORRES_URRBC
+  operator: number_between_strict
+  value:
+    min: 0
+    max: 5
 ```
 
 ## Логика `date_between`

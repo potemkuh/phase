@@ -365,6 +365,15 @@
 #       min: 36.0
 #       max: 36.9
 #
+# number_between_strict
+#   Что делает: true, если весь интервал из ячейки (включая "2-6") лежит внутри min..max.
+#   Удобно для value_in_if «норма», чтобы диапазон, заходящий за границу нормы, не считался нормой.
+#   Пример:
+#     operator: number_between_strict
+#     value:
+#       min: 0
+#       max: 5
+#
 # greater_than
 #   Что делает: true, если число в when.column больше when.value.
 #   Пример: operator: greater_than, value: 10
@@ -418,7 +427,7 @@
 #
 # Как выбрать value для operator:
 # - equals / not_equals / starts_with / greater_than / less_than / less_or_equal -> value: одно значение
-# - number_between / number_not_between -> value: объект с min и max
+# - number_between / number_between_strict / number_not_between -> value: объект с min и max
 # - in / not_in -> value: список значений
 # - equals_column / not_equals_column -> value: имя второй колонки
 # - is_not_empty / is_empty -> value обычно не указывается

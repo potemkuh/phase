@@ -93,6 +93,14 @@ class ConditionEvaluator:
             if actual_min is None or actual_max is None or min_value is None or max_value is None:
                 return False
             return not (actual_max < min_value or actual_min > max_value)
+        if operator == "number_between_strict":
+            # Entire numeric cell (including ranges like "2-6") must lie within [min, max].
+            # Avoids both value_in_if branches firing when a range straddles the norm / high split.
+            actual_min, actual_max = parse_numeric_bounds(actual)
+            min_value, max_value = _parse_between_bounds(expected)
+            if actual_min is None or actual_max is None or min_value is None or max_value is None:
+                return False
+            return actual_min >= min_value and actual_max <= max_value
         if operator == "number_not_between":
             actual_min, actual_max = parse_numeric_bounds(actual)
             min_value, max_value = _parse_between_bounds(expected)

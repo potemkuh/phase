@@ -24,6 +24,7 @@ Thumbs.db
 # Validation outputs
 errors.xlsx
 tft.yml
+find_clinically_significant_columns.py
 ~$*.xlsx
 *.xlsx
 

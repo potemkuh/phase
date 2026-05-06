@@ -17,107 +17,6 @@ rules:
   #   skip_if_empty: false
   #   error_message: "Поля вопросов должны содержать только значение формата Да*"
 
-  - id: BO dOFV процент в диапазоне при ответе да
-    description: SCR_BO_RES_dOFV_PRC должен быть от 9 до 11.99, если SCR_BO_BO_YN_QUEST_ADD = Да*
-    type: number_between
-    target_column: SCR_BO_RES_dOFV_PRC
-    min_value: 9
-    max_value: 11.99
-    skip_if_empty: false
-    when:
-      column: SCR_BO_BO_YN_QUEST_ADD
-      operator: starts_with
-      value: Да
-    error_message: "SCR_BO_RES_dOFV_PRC должен быть от 9 до 11.99 при SCR_BO_BO_YN_QUEST_ADD = Да*"
-
-  - id: BO вопрос значение да при dOFV add 9-11.99
-    description: SCR_BO_BO_YN_QUEST_ADD должно быть Да*, если SCR_BO_RES_dOFV_PRC_ADD от 9 до 11.99
-    type: text_starts_with
-    target_column: SCR_BO_BO_YN_QUEST_ADD
-    prefix: "Да"
-    skip_if_empty: false
-    when:
-      column: SCR_BO_RES_dOFV_PRC_ADD
-      operator: number_between
-      value:
-        min: 9
-        max: 11.99
-    error_message: "SCR_BO_BO_YN_QUEST_ADD должно быть Да* при SCR_BO_RES_dOFV_PRC_ADD от 9 до 11.99"
-
-  - id: BO OFV FIR время заполнено при вопросе да
-    description: SCR_BO_TIM_OFV_FIR_ADD должно быть заполнено, если SCR_BO_BO_YN_QUEST_ADD = Да*
-    type: required_if
-    target_column: SCR_BO_TIM_OFV_FIR_ADD
-    when:
-      column: SCR_BO_BO_YN_QUEST_ADD
-      operator: starts_with
-      value: Да
-    error_message: "SCR_BO_TIM_OFV_FIR_ADD должно быть заполнено при SCR_BO_BO_YN_QUEST_ADD = Да*"
-
-  - id: BO OFV FIR результат заполнен при вопросе да
-    description: SCR_BO_RES_OFV_FIR_ADD должно быть заполнено, если SCR_BO_BO_YN_QUEST_ADD = Да*
-    type: required_if
-    target_column: SCR_BO_RES_OFV_FIR_ADD
-    when:
-      column: SCR_BO_BO_YN_QUEST_ADD
-      operator: starts_with
-      value: Да
-    error_message: "SCR_BO_RES_OFV_FIR_ADD должно быть заполнено при SCR_BO_BO_YN_QUEST_ADD = Да*"
-
-  - id: BO время ингаляции не раньше первого OFV
-    description: SCR_BO_TIM_SALB_ADD должно быть >= SCR_BO_TIM_OFV_FIR_ADD, если SCR_BO_TIM_OFV_FIR_ADD не пусто
-    type: time_greater_or_equal
-    target_column: SCR_BO_TIM_SALB_ADD
-    ref_column: SCR_BO_TIM_OFV_FIR_ADD
-    skip_if_empty: false
-    when:
-      column: SCR_BO_TIM_OFV_FIR_ADD
-      operator: is_not_empty
-    error_message: "SCR_BO_TIM_SALB_ADD должно быть не раньше SCR_BO_TIM_OFV_FIR_ADD"
-
-  - id: BO OFV SEC время 30-60 минут от первого
-    description: SCR_BO_TIM_OFV_SEC_ADD должно быть в интервале 30..60 минут от SCR_BO_TIM_OFV_FIR_ADD, если SCR_BO_TIM_OFV_SEC_ADD не пусто
-    type: time_between
-    target_column: SCR_BO_TIM_OFV_SEC_ADD
-    ref_column: SCR_BO_TIM_OFV_FIR_ADD
-    min_minutes: 30
-    max_minutes: 60
-    skip_if_empty: false
-    when:
-      column: SCR_BO_TIM_OFV_SEC_ADD
-      operator: is_not_empty
-    error_message: "SCR_BO_TIM_OFV_SEC_ADD должно быть в интервале 30..60 минут от SCR_BO_TIM_OFV_FIR_ADD"
-
-  - id: BO OFV SEC результат заполнен при вопросе да
-    description: SCR_BO_RES_OFV_SEC_ADD должно быть заполнено, если SCR_BO_BO_YN_QUEST_ADD = Да*
-    type: required_if
-    target_column: SCR_BO_RES_OFV_SEC_ADD
-    when:
-      column: SCR_BO_BO_YN_QUEST_ADD
-      operator: starts_with
-      value: Да
-    error_message: "SCR_BO_RES_OFV_SEC_ADD должно быть заполнено при SCR_BO_BO_YN_QUEST_ADD = Да*"
-
-  - id: BO dOFV мл заполнено при вопросе да
-    description: SCR_BO_RES_dOFV_ML_ADD должно быть заполнено, если SCR_BO_BO_YN_QUEST_ADD = Да*
-    type: required_if
-    target_column: SCR_BO_RES_dOFV_ML_ADD
-    when:
-      column: SCR_BO_BO_YN_QUEST_ADD
-      operator: starts_with
-      value: Да
-    error_message: "SCR_BO_RES_dOFV_ML_ADD должно быть заполнено при SCR_BO_BO_YN_QUEST_ADD = Да*"
-
-  - id: BO dOFV процент заполнено при вопросе да
-    description: SCR_BO_RES_dOFV_PRC_ADD должно быть заполнено, если SCR_BO_BO_YN_QUEST_ADD = Да*
-    type: required_if
-    target_column: SCR_BO_RES_dOFV_PRC_ADD
-    when:
-      column: SCR_BO_BO_YN_QUEST_ADD
-      operator: starts_with
-      value: Да
-    error_message: "SCR_BO_RES_dOFV_PRC_ADD должно быть заполнено при SCR_BO_BO_YN_QUEST_ADD = Да*"
-
   - id: возраст от 18 до 99
     description: SCR_DEMO_AGE возраст от 18
     type: number_between
@@ -137,45 +36,11 @@ rules:
     skip_if_empty: false
     error_message: "SCR_DEMO_SEX должен быть Женский или Мужской"
 
-  - id: маммография для женщин значение да
-    description: SCR_MAMM_MAMM_YN_QUEST должно быть Да, если SCR_DEMO_SEX = Женский
-    type: value_in_if
-    target_column: SCR_MAMM_MAMM_YN_QUEST
-    allowed_values:
-      - Да
-    when:
-      column: SCR_DEMO_SEX
-      operator: equals
-      value: Женский
-    skip_if_empty: false
-    error_message: "SCR_MAMM_MAMM_YN_QUEST должно быть Да, если SCR_DEMO_SEX = Женский"
-
-  - id: маммография для мужчин не применимо
-    description: SCR_MAMM_MAMM_YN_QUEST должно быть Не применимо, если SCR_DEMO_SEX = Мужской
-    type: value_in_if
-    target_column: SCR_MAMM_MAMM_YN_QUEST
-    allowed_values:
-      - Не применимо
-    when:
-      column: SCR_DEMO_SEX
-      operator: equals
-      value: Мужской
-    skip_if_empty: false
-    error_message: "SCR_MAMM_MAMM_YN_QUEST должно быть Не применимо, если SCR_DEMO_SEX = Мужской"
-
   - id: bmi заполнен
     description: SCR_DEMO_BMI должен быть заполнен
     type: not_empty
     target_column: SCR_DEMO_BMI
     error_message: "SCR_DEMO_BMI должен быть заполнен"
-
-  - id: pack year пусто или не более 10
-    description: SCR_SU_PACK_YEAR может быть пустым, либо должен быть <= 10
-    type: number_less_or_equal
-    target_column: SCR_SU_PACK_YEAR
-    value: 10
-    skip_if_empty: true
-    error_message: "SCR_SU_PACK_YEAR должен быть пустым или иметь значение <= 10"
 
   - id: su drug значение нет
     description: SCR_SU_YN_DRUG должно быть Нет
@@ -200,70 +65,6 @@ rules:
     target_column: SCR_PE_TIM
     error_message: "SCR_PE_TIM должно быть заполнено"
 
-  - id: ФО общее состояние допустимые значения
-    description: SCR_PE_ORRES_GENEX должен быть одним из допустимых значений
-    type: value_in
-    target_column: SCR_PE_ORRES_GENEX
-    allowed_values:
-      - Удовлетворительное
-      - Средней тяжести
-      - Тяжелое
-      - Крайне тяжелое
-      - Агональное
-    skip_if_empty: false
-    error_message: "SCR_PE_ORRES_GENEX содержит недопустимое значение"
-
-  - id: ФО комментарий пустой при удовлетворительно
-    description: SCR_PE_COMM_GENEX должен быть пустым, если SCR_PE_ORRES_GENEX = Удовлетворительно
-    type: empty_if
-    target_column: SCR_PE_COMM_GENEX
-    when:
-      column: SCR_PE_ORRES_GENEX
-      operator: equals
-      value: Удовлетворительное
-    error_message: "SCR_PE_COMM_GENEX должен быть пустым при значении SCR_PE_ORRES_GENEX = Удовлетворительно"
-
-  - id: ФО комментарий заполнен при не удовлетворительно
-    description: SCR_PE_COMM_GENEX должен быть заполнен, если SCR_PE_ORRES_GENEX не равно Удовлетворительно
-    type: required_if
-    target_column: SCR_PE_COMM_GENEX
-    when:
-      column: SCR_PE_ORRES_GENEX
-      operator: not_equals
-      value: Удовлетворительно
-    error_message: "SCR_PE_COMM_GENEX должен быть заполнен при значении SCR_PE_ORRES_GENEX отличном от Удовлетворительно"
-
-  - id: ФО кожа и слизистые допустимые значения
-    description: SCR_PE_ORRES_SKIN_MUCS должен быть одним из допустимых значений
-    type: value_in
-    target_column: SCR_PE_ORRES_SKIN_MUCS
-    allowed_values:
-      - Норма
-      - Отклонение клинически незначимо*
-      - Отклонение клинически значимо**
-    skip_if_empty: false
-    error_message: "SCR_PE_ORRES_SKIN_MUCS содержит недопустимое значение"
-
-  - id: ФО комментарий кожа пустой при норма
-    description: SCR_PE_COMM_SKIN_MUCS должен быть пустым, если SCR_PE_ORRES_SKIN_MUCS = Норма
-    type: empty_if
-    target_column: SCR_PE_COMM_SKIN_MUCS
-    when:
-      column: SCR_PE_ORRES_SKIN_MUCS
-      operator: equals
-      value: Норма
-    error_message: "SCR_PE_COMM_SKIN_MUCS должен быть пустым при значении SCR_PE_ORRES_SKIN_MUCS = Норма"
-
-  - id: ФО комментарий кожа заполнен при не норма
-    description: SCR_PE_COMM_SKIN_MUCS должен быть заполнен, если SCR_PE_ORRES_SKIN_MUCS не равно Норма
-    type: required_if
-    target_column: SCR_PE_COMM_SKIN_MUCS
-    when:
-      column: SCR_PE_ORRES_SKIN_MUCS
-      operator: not_equals
-      value: Норма
-    error_message: "SCR_PE_COMM_SKIN_MUCS должен быть заполнен при значении SCR_PE_ORRES_SKIN_MUCS отличном от Норма"
-
   - id: ФО дата не более 14 дней от скрининга
     description: SCR_PE_DAT не более 14 дней от SCR_ICF_DSSTDAT_ICFINV
     type: date_between
@@ -273,14 +74,6 @@ rules:
     max_days: 14
     date_format: "%Y-%m-%d"
     error_message: "SCR_PE_DAT должен быть в диапазоне 0..14 дней от SCR_ICF_DSSTDAT_ICFINV"
-
-  - id: VS вопрос значение да
-    description: SCR_VS_VS_YN_QUEST должен иметь только значение формата Да*
-    type: text_starts_with
-    target_column: SCR_VS_VS_YN_QUEST
-    prefix: "Да"
-    skip_if_empty: false
-    error_message: "SCR_VS_VS_YN_QUEST должен содержать только значение формата Да*"
 
   - id: VS дата не более 14 дней от скрининга
     description: SCR_VS_DAT не более 14 дней от SCR_ICF_DSSTDAT_ICFINV
@@ -610,39 +403,6 @@ rules:
       value: Норма
     error_message: "SCR_ECG_COMM должен быть заполнен при значении SCR_ECG_ORRES_ECG отличном от Норма"
 
-  - id: ОФВ вопрос значение да
-    description: SCR_OFV_OFV_YN_QUEST должен иметь только значение формата Да*
-    type: text_starts_with
-    target_column: SCR_OFV_OFV_YN_QUEST
-    prefix: "Да"
-    skip_if_empty: false
-    error_message: "SCR_OFV_OFV_YN_QUEST должен содержать только значение формата Да*"
-
-  - id: ОФВ дата не более 14 дней от скрининга
-    description: SCR_OFV_DAT не более 14 дней от SCR_ICF_DSSTDAT_ICFINV
-    type: date_between
-    target_column: SCR_OFV_DAT
-    ref_column: SCR_ICF_DSSTDAT_ICFINV
-    min_days: 0
-    max_days: 14
-    date_format: "%Y-%m-%d"
-    error_message: "SCR_OFV_DAT должен быть в диапазоне 0..14 дней от SCR_ICF_DSSTDAT_ICFINV"
-
-  - id: ОФВ время не пустое
-    description: SCR_OFV_TIM должно быть заполнено
-    type: not_empty
-    target_column: SCR_OFV_TIM
-    error_message: "SCR_OFV_TIM должно быть заполнено"
-
-  - id: ОФВ результат ofv1 диапазон 30-85
-    description: SCR_OFV_RES_OFV1 должно быть в диапазоне 30..85
-    type: number_between
-    target_column: SCR_OFV_RES_OFV1
-    min_value: 30
-    max_value: 85
-    skip_if_empty: false
-    error_message: "SCR_OFV_RES_OFV1 должно быть в диапазоне 30..85"
-
   - id: дата подписания врачом и пациентом должны совпадать
     description: SCR_ICF_DSSTDAT_ICFPAT должна быть равна SCR_ICF_DSSTDAT_ICFINV
     type: date_equal
@@ -711,56 +471,3 @@ rules:
     max_days: 14
     date_format: "%Y-%m-%d"
     error_message: "P1_D1_SV_VISDAT должен быть в диапазоне 0..14 дней от SCR_ICF_DSSTDAT_ICFINV"
-
-  - id: 2 визит в диапазоне 5-9 дней от первого
-    description: P2_D7_SV_VISDAT должен быть в диапазоне 5-9 дней от P1_D1_SV_VISDAT
-    type: date_between
-    target_column: P2_D7_SV_VISDAT
-    ref_column: P1_D1_SV_VISDAT
-    min_days: 5
-    max_days: 9
-    date_format: "%Y-%m-%d"
-    error_message: "P2_D7_SV_VISDAT должен быть в диапазоне 5..9 дней от P1_D1_SV_VISDAT"
-
-  - id: 3 визит в диапазоне 12-16 дней от первого
-    description: P3_D14_SV_VISDAT должен быть в диапазоне 12-16 дней от P1_D1_SV_VISDAT
-    type: date_between
-    target_column: P3_D14_SV_VISDAT
-    ref_column: P1_D1_SV_VISDAT
-    min_days: 12
-    max_days: 16
-    date_format: "%Y-%m-%d"
-    error_message: "P3_D14_SV_VISDAT должен быть в диапазоне 12..16 дней от P1_D1_SV_VISDAT"
-
-  - id: 4 визит в диапазоне 26-30 дней от первого
-    description: P4_D28_E_TERM_SV_TITL_VISDAT должен быть в диапазоне 26-30 дней от P1_D1_SV_VISDAT
-    type: date_between
-    target_column: P4_D28_E_TERM_SV_TITL_VISDAT
-    ref_column: P1_D1_SV_VISDAT
-    min_days: 26
-    max_days: 30
-    date_format: "%Y-%m-%d"
-    error_message: "P4_D28_E_TERM_SV_TITL_VISDAT должен быть в диапазоне 26..30 дней от P1_D1_SV_VISDAT"
-
-  - id: рентген не более 365 дней от скринингового визита
-    description: Разница между SCR_XRAY_DAT и SCR_SV_VISDAT не должна превышать 365 дней
-    type: date_between
-    target_column: SCR_XRAY_DAT
-    ref_column: SCR_SV_VISDAT
-    min_days: 0
-    max_days: 365
-    date_format: "%Y-%m-%d"
-    error_message: "Разница между SCR_XRAY_DAT и SCR_SV_VISDAT должна быть не более 365 дней"
-
-  - id: ACQ суммарный результат не пустой
-    description: SCR_ACQ_ACQ_SUM_RES должно быть заполнено
-    type: not_empty
-    target_column: SCR_ACQ_ACQ_SUM_RES
-    error_message: "SCR_ACQ_ACQ_SUM_RES должно быть заполнено"
-
-  - id: ACQ индикатор результата не пустой
-    description: SCR_ACQ_ACQ_IND_RES должно быть заполнено
-    type: not_empty
-    target_column: SCR_ACQ_ACQ_IND_RES
-    error_message: "SCR_ACQ_ACQ_IND_RES должно быть заполнено"
-

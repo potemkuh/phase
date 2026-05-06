@@ -5,6 +5,8 @@ from typing import Optional
 from .engine import ValidationEngine
 from .factory import RuleFactory
 from .io import ConfigLoader, DataReader, ReportWriter
+from .models import ValidationCheckRow
+from .rules import Rule
 
 
 def parse_args() -> argparse.Namespace:
@@ -13,8 +15,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--rules", required=True, help="Path to rules YAML file")
     parser.add_argument(
         "--output",
-        default="errors.xlsx",
-        help="Path to output report (.xlsx/.csv), default: errors.xlsx",
+        default="report.xlsx",
+        help="Path to output report (.xlsx/.csv), default: report.xlsx",
     )
     parser.add_argument(
         "--sheet",
@@ -44,8 +46,8 @@ def run_validation(
     rules = RuleFactory.create_rules(rules_payload=rules_payload, defaults=defaults)
 
     engine = ValidationEngine(dataframe=data, rules=rules)
-    errors = engine.run()
-    ReportWriter.write_errors(errors=errors, output_path=output_path)
+    errors, checks = engine.run()
+    ReportWriter.write_report(errors=errors, checks=checks, output_path=output_path)
 
     print(f"Rows checked: {len(data)}")
     print(f"Errors found: {len(errors)}")

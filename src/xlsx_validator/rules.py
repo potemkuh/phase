@@ -833,32 +833,39 @@ class TimeAfterRefIfDateEqualManyRule(Rule):
     def is_failed(self, row: pd.Series) -> bool:
         return bool(self._failed_columns(row))
 
-    def validate(self, row: pd.Series) -> Optional[ValidationErrorRow]:
-        if not self.should_run(row):
-            return None
-        failed = self._failed_columns(row)
-        if not failed:
-            return None
-        columns = list(failed)
+    def uses_row_validation(self) -> bool:
+        # Emit one error row per failed target time column.
+        return False
+
+    def validate_dataframe(self, dataframe: pd.DataFrame) -> List[ValidationErrorRow]:
+        errors: List[ValidationErrorRow] = []
         ref_date_column = self.payload["ref_date_column"]
         ref_time_column = self.payload["ref_time_column"]
-        if ref_date_column not in columns:
-            columns.append(ref_date_column)
-        if ref_time_column not in columns:
-            columns.append(ref_time_column)
-        screening_number, randomization_number, initials = _extract_row_identifiers(row)
-        return ValidationErrorRow(
-            row_number=int(row.name) + 2,
-            screening_number=screening_number,
-            randomization_number=randomization_number,
-            initials=initials,
-            rule_id=self.rule_id,
-            severity=self.severity,
-            error_message=self.error_message,
-            description=self.description,
-            columns=columns,
-            values=collect_columns_values(row, columns),
-        )
+
+        for _, row in dataframe.iterrows():
+            if not self.should_run(row):
+                continue
+            failed = self._failed_columns(row)
+            if not failed:
+                continue
+            screening_number, randomization_number, initials = _extract_row_identifiers(row)
+            for failed_column in failed:
+                columns = [failed_column, ref_date_column, ref_time_column]
+                errors.append(
+                    ValidationErrorRow(
+                        row_number=int(row.name) + 2,
+                        screening_number=screening_number,
+                        randomization_number=randomization_number,
+                        initials=initials,
+                        rule_id=self.rule_id,
+                        severity=self.severity,
+                        error_message=self.error_message,
+                        description=self.description,
+                        columns=columns,
+                        values=collect_columns_values(row, columns),
+                    )
+                )
+        return errors
 
 
 class UniqueIfRule(Rule):

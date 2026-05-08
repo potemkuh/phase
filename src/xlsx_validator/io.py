@@ -97,28 +97,29 @@ class ReportWriter:
         # Report sheet data from checks
         report_rows = []
         for check in checks:
-            target_column = check.columns[0] if check.columns else ""
             status = "Ошибка" if check.is_failed else "OK"
-            report_rows.append({
-                "Screening #": check.screening_number,
-                "Randomization #": check.randomization_number,
-                "Initials": check.initials,
-                "Row Number": check.row_number,
-                "Rule ID": check.rule_id,
-                "Column": target_column,
-                "Status": status
-            })
+            columns = check.columns if check.columns else [""]
+            for target_column in columns:
+                report_rows.append({
+                    "Screening #": check.screening_number,
+                    "Randomization #": check.randomization_number,
+                    "Initials": check.initials,
+                    "Row Number": check.row_number,
+                    "Rule ID": check.rule_id,
+                    "Column": target_column,
+                    "Status": status
+                })
 
         report_df = pd.DataFrame(report_rows)
 
         # Summary report like ira
         summary_df = pd.DataFrame([
             {
-                "subject": check.randomization_number,
-                "column": check.columns[0] if check.columns else "",
-                "is_error": check.is_failed
+                "subject": row["Randomization #"],
+                "column": row["Column"],
+                "is_error": row["Status"] == "Ошибка"
             }
-            for check in checks
+            for row in report_rows
         ])
 
         parsed = summary_df["column"].apply(parse_rule_id)

@@ -471,3 +471,18 @@ rules:
     max_days: 14
     date_format: "%Y-%m-%d"
     error_message: "P1_D1_SV_VISDAT должен быть в диапазоне 0..14 дней от SCR_ICF_DSSTDAT_ICFINV"
+
+
+  - id: Поле не пустое
+    description: "Поле обязательно к заполнению"
+    type: not_empty
+    target_columns:
+      - SCR_DEMO_SEX
+      - SCR_DEMO_BRTHDAT
+      - SCR_DEMO_HEIGHT
+      - SCR_DEMO_WEIGHT
+      - SCR_PE_TIM
+      - SCR_VS_TIM
+      - SCR_ECG_TIM
+      - SCR_DEMO_BMI
+    error_message: "Поле должно быть заполнено"
